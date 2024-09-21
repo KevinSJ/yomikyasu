@@ -24,6 +24,8 @@ type Service interface {
 	Close() error
 
 	Prepare(string) (*sql.Stmt, error)
+
+	Query(string) *sql.Row
 }
 
 type service struct {
@@ -52,6 +54,10 @@ func New() Service {
 		db: db,
 	}
 	return dbInstance
+}
+
+func (s *service) Query(query string) *sql.Row {
+	return s.db.QueryRow(query)
 }
 
 func (s *service) Prepare(query string) (*sql.Stmt, error) {
