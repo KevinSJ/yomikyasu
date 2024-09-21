@@ -10,7 +10,7 @@ import (
 const (
 	CREATE_CONFIG_QUERY string = "INSERT INTO configs (use_natural_voice, speech_speed, full_text_service_url) VALUES (?, ?, ?);"
 	GET_ALL_CONFIG      string = "SELECT * FROM configs"
-    DELETE_CONFIG string = "DELETE FROM configs wehre id = ?"
+	DELETE_CONFIG       string = "DELETE FROM configs wehre id = ?"
 )
 
 func CreateConfig(db *database.Service, config *Config) (*sql.Result, error) {
