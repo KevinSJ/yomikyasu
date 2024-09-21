@@ -1,5 +1,5 @@
 -- +migrate Up
--- 002_create_feed_table.up.sql
+-- 001_create_feed_table.up.sql
 CREATE TABLE IF NOT EXISTS feeds (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     url TEXT NOT NULL,
@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS feeds (
 );
 
 -- +migrate Down
--- 002_create_feed_table.down.sql
+-- 001_create_feed_table.down.sql
 DROP TABLE IF EXISTS feeds;
+

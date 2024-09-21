@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS configs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     use_natural_voice BOOLEAN NOT NULL,
     speech_speed REAL NOT NULL,
-    full_text_service_url TEXT
+    full_text_service_url TEXT,
+    refresh_interval INTEGER
 );
 
 

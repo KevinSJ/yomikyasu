@@ -1,5 +1,5 @@
+-- 002_create_podcast_and_episode_tables.sql
 -- +migrate Up
--- 001_create_podcast_and_episode_tables.up.sql
 CREATE TABLE IF NOT EXISTS podcasts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     link TEXT NOT NULL,
@@ -9,14 +9,16 @@ CREATE TABLE IF NOT EXISTS podcasts (
 
 CREATE TABLE IF NOT EXISTS episodes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    podcast_id INTEGER NOT NULL,
+    uuid text NOT NULL,
+    feed_id INTEGER NOT NULL,
     url TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     pub_date TEXT,
-    file_size INTEGER,
+    file_size REAL,
     duration REAL,
-    FOREIGN KEY (podcast_id) REFERENCES podcasts(id) ON DELETE CASCADE
+    audio_content BLOB,
+    FOREIGN KEY (feed_id) REFERENCES feeds(id) ON DELETE CASCADE
 );
 
 -- +migrate Down
