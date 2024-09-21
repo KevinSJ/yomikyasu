@@ -22,6 +22,8 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	Prepare(string) (*sql.Stmt, error)
 }
 
 type service struct {
@@ -50,6 +52,10 @@ func New() Service {
 		db: db,
 	}
 	return dbInstance
+}
+
+func (s *service) Prepare(query string) (*sql.Stmt, error) {
+	return s.db.Prepare(query)
 }
 
 // Health checks the health of the database connection by pinging the database.
