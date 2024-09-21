@@ -1,0 +1,178 @@
+openapi: 3.0.0
+info:
+  title: Yomikasu API
+  description: API for converting RSS feeds into podcasts using text-to-speech services.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /feeds:
+    post:
+      summary: Add a new RSS feed
+      operationId: addRSSFeed
+      requestBody:
+        description: The URL of the RSS feed to add
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  example: 'https://example.com/rss'
+      responses:
+        200:
+          description: RSS feed added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RSSFeed'
+
+    get:
+      summary: List all RSS feeds
+      operationId: listRSSFeeds
+      responses:
+        200:
+          description: A list of RSS feeds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RSSFeed'
+
+  /feeds/{id}:
+    delete:
+      summary: Delete an RSS feed by ID
+      operationId: deleteRSSFeed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the RSS feed
+          schema:
+            type: string
+      responses:
+        200:
+          description: RSS feed deleted successfully
+
+  /feeds/{id}/convert:
+    post:
+      summary: Convert an RSS feed into a podcast
+      operationId: convertRSSFeed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the RSS feed to convert
+          schema:
+            type: string
+      responses:
+        200:
+          description: Podcast generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Podcast'
+
+  /podcasts:
+    get:
+      summary: List all podcasts
+      operationId: listPodcasts
+      parameters:
+        - name: rss_feed_id
+          in: query
+          required: false
+          description: Optional RSS feed ID to filter podcasts
+          schema:
+            type: string
+      responses:
+        200:
+          description: A list of podcasts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Podcast'
+
+  /podcasts/{id}:
+    get:
+      summary: Get a podcast by ID
+      operationId: getPodcast
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the podcast
+          schema:
+            type: string
+      responses:
+        200:
+          description: Podcast details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Podcast'
+
+    delete:
+      summary: Delete a podcast by ID
+      operationId: deletePodcast
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the podcast to delete
+          schema:
+            type: string
+      responses:
+        200:
+          description: Podcast deleted successfully
+
+components:
+  schemas:
+    RSSFeed:
+      type: object
+      properties:
+        id:
+          type: string
+          example: '123'
+        url:
+          type: string
+          example: 'https://example.com/rss'
+        title:
+          type: string
+          example: 'Tech News Feed'
+        description:
+          type: string
+          example: 'Latest technology news'
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-09-01T12:00:00Z'
+
+    Podcast:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 'abc-123'
+        rss_feed_id:
+          type: string
+          example: '123'
+        title:
+          type: string
+          example: 'Podcast Episode 1'
+        description:
+          type: string
+          example: 'Summary of the latest tech news'
+        audio_url:
+          type: string
+          example: 'https://example.com/audio/episode1.mp3'
+        created_at:
+          type: string
+          format: date-time
+          example: '2024-09-01T12:00:00Z'
