@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	CREATE_FEED string = "INSERT INTO feeds (url, is_full_text, item_since, max_items, language) VALUES (?, ?, ?, ?, ?)"
-	GET_FEEDS   string = "SELECT * FROM feeds"
-	DELETE_FEED string = "DELETE FROM feeds where id = ?"
+	CREATE_FEED = "INSERT INTO feeds (url, is_full_text, item_since, max_items, language) VALUES (?, ?, ?, ?, ?)"
+	GET_FEEDS   = "SELECT * FROM feeds"
+	DELETE_FEED = "DELETE FROM feeds where id = ?"
 )
 
 func CreateFeed(db *database.Service, feed *Feed) (*sql.Result, error) {
@@ -20,7 +20,7 @@ func CreateFeed(db *database.Service, feed *Feed) (*sql.Result, error) {
 	result, err := stmt.Exec(feed.Url, feed.IsFullText, feed.ItemSince, feed.MaxItems, feed.Language)
 
 	if err != nil {
-        log.Printf("%v", err)
+		log.Printf("%v", err)
 		return nil, err
 	}
 
