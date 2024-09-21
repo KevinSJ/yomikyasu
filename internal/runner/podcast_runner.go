@@ -11,9 +11,11 @@ import (
 	"time"
 	"yomikyasu/internal/database"
 	"yomikyasu/internal/model"
+	"yomikyasu/internal/tool"
 
 	texttospeech "cloud.google.com/go/texttospeech/apiv1"
 	"cloud.google.com/go/texttospeech/apiv1/texttospeechpb"
+	"github.com/google/uuid"
 	"github.com/mmcdole/gofeed"
 	"golang.org/x/sync/errgroup"
 )
@@ -22,8 +24,7 @@ type WorkerRequest struct {
 	// Item for this request
 	Item *gofeed.Item
 
-	// Directory to which the file wil write to
-	Directory string
+	FeedId int
 
 	// Language of the item
 	LanguageCode string
@@ -47,20 +48,29 @@ type runner struct {
 	channel chan *WorkerRequest
 }
 
-const SPEECH_SYNTHESIZE_RETRY_CNT = 5
-const FEED_RETRY_CNT = 5
+const (
+	SPEECH_SYNTHESIZE_RETRY_CNT = 5
+	FEED_RETRY_CNT              = 5
+	BIT_TO_BYTE_FACTOR          = 8.0
+	TTS_FILE_BIT_RATE           = 32000.0
+)
 
 var (
 	refreshInterval, _ = strconv.Atoi(os.Getenv("REFERSH_INTERVAL"))
 	workerSize, _      = strconv.Atoi(os.Getenv("WORKER_SIZE"))
 	ttsClient          *texttospeech.Client
 	useNaturalVoice    = true
-	speechSpeed        = 1.25
+	speechSpeed        = 1.5
 )
 
 func New(ctx context.Context, dbService database.Service) Runner {
-	if ttsClient != nil {
-		ttsClient, _ = texttospeech.NewClient(ctx)
+	var err error
+	if ttsClient == nil {
+		ttsClient, err = texttospeech.NewClient(ctx)
+	}
+
+	if err != nil {
+		log.Println(err)
 	}
 
 	var wg sync.WaitGroup
@@ -68,7 +78,7 @@ func New(ctx context.Context, dbService database.Service) Runner {
 
 	channel := make(chan *WorkerRequest, 100)
 	for i := 0; i < workerSize; i++ {
-		go processSpeechGeneration(&wg, ttsClient, channel, ctx)
+		go processSpeechGeneration(&wg, channel, ctx, dbService)
 	}
 
 	return &runner{
@@ -79,7 +89,7 @@ func New(ctx context.Context, dbService database.Service) Runner {
 	}
 }
 
-func processSpeechGeneration(wg *sync.WaitGroup, client *texttospeech.Client, workerItems chan *WorkerRequest, ctx context.Context) error {
+func processSpeechGeneration(wg *sync.WaitGroup, workerItems chan *WorkerRequest, ctx context.Context, dbService database.Service) error {
 	defer wg.Done()
 
 	for workerItem := range workerItems {
@@ -87,10 +97,10 @@ func processSpeechGeneration(wg *sync.WaitGroup, client *texttospeech.Client, wo
 
 		log.Printf("Start procesing %v ", feedItem.Title)
 
-		speechRequests := rss.GetSynthesizeSpeechRequests(feedItem, workerItem.LanguageCode, workerItem.UseNaturalVoice, workerItem.SpeechSpeed)
+		speechRequests := tool.GetSynthesizeSpeechRequests(feedItem, workerItem.LanguageCode, workerItem.UseNaturalVoice, workerItem.SpeechSpeed)
 		audioContent := make([]byte, 0)
 
-		for _, ssr := range speechRequests {
+		for ssr := range slices.Values(speechRequests) {
 			var err error = nil
 			var resp *texttospeechpb.SynthesizeSpeechResponse = nil
 			for i := 0; i < SPEECH_SYNTHESIZE_RETRY_CNT; i++ {
@@ -99,13 +109,13 @@ func processSpeechGeneration(wg *sync.WaitGroup, client *texttospeech.Client, wo
 					time.Sleep(time.Second)
 				}
 
-				resp, err = client.SynthesizeSpeech(ctx, ssr)
+				resp, err = (ttsClient).SynthesizeSpeech(ctx, ssr)
 				if err != nil {
 					log.Printf("Error Encountered, Response: %v\n", err.Error())
 					continue
 				}
 
-				if len(resp.AudioContent) > 0 {
+				if resp != nil && len(resp.AudioContent) > 0 {
 					audioContent = append(audioContent, resp.AudioContent...)
 					break
 				}
@@ -113,9 +123,23 @@ func processSpeechGeneration(wg *sync.WaitGroup, client *texttospeech.Client, wo
 			if err != nil {
 				return err
 			}
+
+			uuid, _ := uuid.NewV7()
+
+			model.CreateEpisode(&dbService, &model.Episode{
+				UUID:         uuid.String(),
+				Url:          feedItem.Link,
+				Title:        feedItem.Title,
+				Description:  feedItem.Description,
+				PubDate:      feedItem.Published,
+				FileSize:     float64(len(audioContent)),
+				Duration:     float64(len(audioContent)) * BIT_TO_BYTE_FACTOR / TTS_FILE_BIT_RATE,
+				FeedId:       int64(workerItem.FeedId),
+				AudioContent: audioContent,
+			})
 		}
 
-		log.Printf("Finished Processing: %v, written to %v\n", feedItem.Title)
+		log.Printf("Finished Processing: %v\n", feedItem.Title)
 	}
 
 	return nil
@@ -160,27 +184,33 @@ func (r *runner) RunOnce(ctx context.Context) {
 				}
 
 				return lang
-			}(feed.Language)
+			}(parsedFeed.Language)
 
 			for item := range slices.Values(parsedFeed.Items) {
-				if processedItems == v.MaxItems {
-					return nil
-				}
-				if time.Since(item.PublishedParsed.Local()).Hours() <= v.ItemSince {
-					log.Printf("Adding item... title: %s", item.Title)
+				if processedItems <= v.MaxItems && time.Since(item.PublishedParsed.Local()).Hours() <= v.ItemSince {
+					log.Printf("Adding item... title: %s, feed: %s", item.Title, parsedFeed.Title)
 					r.channel <- &WorkerRequest{
 						Item:            item,
 						LanguageCode:    feedLanguage,
 						UseNaturalVoice: useNaturalVoice,
 						SpeechSpeed:     speechSpeed,
+						FeedId:          v.Id,
 					}
 
+					processedItems++
 				}
 			}
 
 			return nil
 		})
 	}
+
+	if err := g.Wait(); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	close(r.channel)
+	r.wg.Wait()
 }
 
 func getFeedWithRetry(fp *gofeed.Parser, v string) *gofeed.Feed {
