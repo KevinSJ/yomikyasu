@@ -29,7 +29,7 @@ type (
 
 		// MaxItems is the max number of item per feed after applying the time
 		// filter
-		MaxItems int `json:"maxItems"`
+		MaxItems int64 `json:"maxItems"`
 
 		// Language the language for this rss feed.
 		Language string `json:"language"`
