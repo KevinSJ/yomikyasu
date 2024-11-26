@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"yomikyasu/internal/model"
 
 	_ "github.com/joho/godotenv/autoload"
 	_ "github.com/mattn/go-sqlite3"
@@ -23,13 +24,12 @@ type Service interface {
 	// It returns an error if the connection cannot be closed.
 	Close() error
 
-	Prepare(string) (*sql.Stmt, error)
-
-	Query(string) *sql.Row
+	Query() *model.Queries
 }
 
 type service struct {
-	db *sql.DB
+	db  *sql.DB
+	sql model.Queries
 }
 
 var (
@@ -51,17 +51,15 @@ func New() Service {
 	}
 
 	dbInstance = &service{
-		db: db,
+		db:  db,
+		sql: *model.New(db),
 	}
+
 	return dbInstance
 }
 
-func (s *service) Query(query string) *sql.Row {
-	return s.db.QueryRow(query)
-}
-
-func (s *service) Prepare(query string) (*sql.Stmt, error) {
-	return s.db.Prepare(query)
+func (s *service) Query() *model.Queries{
+    return &s.sql
 }
 
 // Health checks the health of the database connection by pinging the database.

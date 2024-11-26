@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"os"
 	"slices"
@@ -24,7 +25,7 @@ type WorkerRequest struct {
 	// Item for this request
 	Item *gofeed.Item
 
-	FeedId int
+	FeedId int64
 
 	// Language of the item
 	LanguageCode string
@@ -126,15 +127,27 @@ func processSpeechGeneration(wg *sync.WaitGroup, workerItems chan *WorkerRequest
 
 			uuid, _ := uuid.NewV7()
 
-			model.CreateEpisode(&dbService, &model.Episode{
-				UUID:         uuid.String(),
-				Url:          feedItem.Link,
-				Title:        feedItem.Title,
-				Description:  feedItem.Description,
-				PubDate:      feedItem.Published,
-				FileSize:     float64(len(audioContent)),
-				Duration:     float64(len(audioContent)) * BIT_TO_BYTE_FACTOR / TTS_FILE_BIT_RATE,
-				FeedId:       int64(workerItem.FeedId),
+			dbService.Query().CreateEpisode(context.Background(), model.CreateEpisodeParams{
+				Uuid:  uuid.String(),
+				Url:   feedItem.Link,
+				Title: feedItem.Title,
+				Description: sql.NullString{
+					String: feedItem.Description,
+					Valid:  true,
+				},
+				PubDate: sql.NullString{
+					String: feedItem.Published,
+					Valid:  true,
+				},
+				FileSize: sql.NullFloat64{
+					Float64: float64(len(audioContent)),
+					Valid:   true,
+				},
+				Duration: sql.NullFloat64{
+					Float64: float64(len(audioContent)) * BIT_TO_BYTE_FACTOR / TTS_FILE_BIT_RATE,
+					Valid:   true,
+				},
+				FeedID:       int64(workerItem.FeedId),
 				AudioContent: audioContent,
 			})
 		}
@@ -163,7 +176,8 @@ func (r *runner) Run(ctx context.Context) {
 }
 
 func (r *runner) RunOnce(ctx context.Context) {
-	feeds, _ := model.GetFeeds(r.db)
+	//feeds, _ := model.GetFeeds(r.db)
+	feeds, _ := (*r.db).Query().ListFeeds(context.Background())
 	g := new(errgroup.Group)
 
 	for feed := range slices.Values(feeds) {
@@ -187,14 +201,14 @@ func (r *runner) RunOnce(ctx context.Context) {
 			}(parsedFeed.Language)
 
 			for item := range slices.Values(parsedFeed.Items) {
-				if processedItems <= v.MaxItems && time.Since(item.PublishedParsed.Local()).Hours() <= v.ItemSince {
+				if processedItems <= int(v.MaxItems.Int64) && time.Since(item.PublishedParsed.Local()).Hours() <= v.ItemSince.Float64 {
 					log.Printf("Adding item... title: %s, feed: %s", item.Title, parsedFeed.Title)
 					r.channel <- &WorkerRequest{
 						Item:            item,
 						LanguageCode:    feedLanguage,
 						UseNaturalVoice: useNaturalVoice,
 						SpeechSpeed:     speechSpeed,
-						FeedId:          v.Id,
+						FeedId:          v.ID,
 					}
 
 					processedItems++

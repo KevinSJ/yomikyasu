@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"yomikyasu/internal/database"
@@ -16,12 +17,12 @@ func (s *Server) RegisterConfigRoutes(e *echo.Echo) {
 
 func createConfig(db database.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		config := &model.Config{}
-		if err := c.Bind(config); err != nil {
+		configParams := &model.CreateConfigParams{}
+		if err := c.Bind(configParams); err != nil {
 			return err
 		}
 
-		result, err := model.CreateConfig(&db, config)
+		result, err := db.Query().CreateConfig(context.Background(), *configParams)
 
 		fmt.Printf("result: %v\n", result)
 		fmt.Printf("err: %v\n", err)
@@ -32,7 +33,7 @@ func createConfig(db database.Service) echo.HandlerFunc {
 
 func getAllConfigs(db database.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		configs, err := model.GetConfigs(&db)
+		configs, err := db.Query().ListConfigs(context.Background())
 
 		if err != nil {
 			return err

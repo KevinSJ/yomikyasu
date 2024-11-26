@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"yomikyasu/internal/database"
 	"yomikyasu/internal/model"
@@ -15,12 +16,12 @@ func (s *Server) RegisterFeedRoutes(e *echo.Echo) {
 
 func createFeed(db database.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		feed := &model.Feed{}
+		feed := &model.CreateFeedParams{}
 		if err := c.Bind(feed); err != nil {
 			return err
 		}
 
-		result, err := model.CreateFeed(&db, feed)
+		result, err := db.Query().CreateFeed(context.Background(), *feed)
 
 		if err != nil {
 			return err
@@ -32,7 +33,7 @@ func createFeed(db database.Service) echo.HandlerFunc {
 
 func getAllFeeds(db database.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		feeds, err := model.GetFeeds(&db)
+		feeds, err := db.Query().ListFeeds(context.Background())
 
 		if err != nil {
 			return err
