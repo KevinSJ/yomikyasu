@@ -3,10 +3,16 @@
 # Build the application
 all: build test
 
+migrate:
+	@sql-migrate up
+
+generate:
+	@sqlc generate
+
 build:
 	@echo "Building..."
-	
-	
+
+
 	@go build -o main cmd/api/main.go
 
 # Run the application
