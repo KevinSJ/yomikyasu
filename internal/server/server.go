@@ -36,6 +36,7 @@ func NewServer() *http.Server {
 		WriteTimeout: 30 * time.Second,
 	}
 
+    NewServer.ConfigDb()
 
     NewServer.StartBackgroundRunners(context.Background())
 

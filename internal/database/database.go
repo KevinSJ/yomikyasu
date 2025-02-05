@@ -25,6 +25,8 @@ type Service interface {
 	Close() error
 
 	Query() *model.Queries
+
+	Config()
 }
 
 type service struct {
@@ -58,8 +60,18 @@ func New() Service {
 	return dbInstance
 }
 
-func (s *service) Query() *model.Queries{
-    return &s.sql
+func (s *service) Query() *model.Queries {
+	return &s.sql
+}
+
+func (s *service) Config() {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	log.Printf("Enable foreign key support in SQLite")
+	_, err := s.db.ExecContext(ctx, "PRAGMA foreign_keys = ON;")
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Failed to enable foreign key: ", err)) // Log the error and terminate the program
+	}
 }
 
 // Health checks the health of the database connection by pinging the database.
