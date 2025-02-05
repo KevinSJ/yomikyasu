@@ -10,60 +10,6 @@ import (
 	"database/sql"
 )
 
-const createEpisode = `-- name: CreateEpisode :one
-INSERT INTO episodes (
-    uuid,
-    feed_id,
-    url,
-    title,
-    description,
-    pub_date,
-    file_size,
-    duration,
-    audio_content
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, uuid, feed_id, url, title, description, pub_date, file_size, duration, audio_content
-`
-
-type CreateEpisodeParams struct {
-	Uuid         string
-	FeedID       int64
-	Url          string
-	Title        string
-	Description  sql.NullString
-	PubDate      sql.NullString
-	FileSize     sql.NullFloat64
-	Duration     sql.NullFloat64
-	AudioContent []byte
-}
-
-func (q *Queries) CreateEpisode(ctx context.Context, arg CreateEpisodeParams) (Episode, error) {
-	row := q.db.QueryRowContext(ctx, createEpisode,
-		arg.Uuid,
-		arg.FeedID,
-		arg.Url,
-		arg.Title,
-		arg.Description,
-		arg.PubDate,
-		arg.FileSize,
-		arg.Duration,
-		arg.AudioContent,
-	)
-	var i Episode
-	err := row.Scan(
-		&i.ID,
-		&i.Uuid,
-		&i.FeedID,
-		&i.Url,
-		&i.Title,
-		&i.Description,
-		&i.PubDate,
-		&i.FileSize,
-		&i.Duration,
-		&i.AudioContent,
-	)
-	return i, err
-}
-
 const createPodcast = `-- name: CreatePodcast :one
 INSERT INTO podcasts(
     link,
@@ -88,22 +34,6 @@ func (q *Queries) CreatePodcast(ctx context.Context, arg CreatePodcastParams) (P
 		&i.Description,
 	)
 	return i, err
-}
-
-const getEpisodeExistsByUrlAndFeedId = `-- name: GetEpisodeExistsByUrlAndFeedId :one
-SELECT EXISTS (SELECT 1 FROM episodes WHERE url = ? and feed_id = ? LIMIT 1)
-`
-
-type GetEpisodeExistsByUrlAndFeedIdParams struct {
-	Url    string
-	FeedID int64
-}
-
-func (q *Queries) GetEpisodeExistsByUrlAndFeedId(ctx context.Context, arg GetEpisodeExistsByUrlAndFeedIdParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getEpisodeExistsByUrlAndFeedId, arg.Url, arg.FeedID)
-	var column_1 int64
-	err := row.Scan(&column_1)
-	return column_1, err
 }
 
 const listEpisodes = `-- name: ListEpisodes :many

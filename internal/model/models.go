@@ -51,17 +51,20 @@ type PodcastFeed struct {
 }
 
 type PodcastsEpisode struct {
-	PodcastID    int64
-	ID           int64
-	Uuid         string
-	FeedID       int64
-	Url          string
-	Title        string
-	Description  sql.NullString
-	PubDate      sql.NullString
-	FileSize     sql.NullFloat64
-	Duration     sql.NullFloat64
-	AudioContent []byte
+	PodcastID          int64
+	ID                 int64
+	Uuid               string
+	FeedID             int64
+	Url                string
+	Title              string
+	Description        sql.NullString
+	PubDate            sql.NullString
+	FileSize           sql.NullFloat64
+	Duration           sql.NullFloat64
+	AudioContent       []byte
+	PodcastLink        string
+	PodcastDescription sql.NullString
+	PodcastTitle       string
 }
 
 type Runner struct {

@@ -10,7 +10,7 @@ import (
 )
 
 const getPodcastEpisodesByPodcastId = `-- name: GetPodcastEpisodesByPodcastId :many
-SELECT podcast_id, id, uuid, feed_id, url, title, description, pub_date, file_size, duration, audio_content FROM podcasts_episodes where podcast_id = ?
+SELECT podcast_id, id, uuid, feed_id, url, title, description, pub_date, file_size, duration, audio_content, podcast_link, podcast_description, podcast_title FROM podcasts_episodes where podcast_id = ?
 `
 
 func (q *Queries) GetPodcastEpisodesByPodcastId(ctx context.Context, podcastID int64) ([]PodcastsEpisode, error) {
@@ -34,6 +34,9 @@ func (q *Queries) GetPodcastEpisodesByPodcastId(ctx context.Context, podcastID i
 			&i.FileSize,
 			&i.Duration,
 			&i.AudioContent,
+			&i.PodcastLink,
+			&i.PodcastDescription,
+			&i.PodcastTitle,
 		); err != nil {
 			return nil, err
 		}
