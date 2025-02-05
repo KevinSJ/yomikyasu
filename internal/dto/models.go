@@ -1,9 +1,8 @@
 package dto
 
-
 type (
 	Config struct {
-        Id int
+		Id int
 		// UseNaturalVoice determines whether to use natural voice from Google, this only have quota of 1
 		// Million, whereas the quota for standard voice is 4 Million
 		UseNaturalVoice bool `json:"useNaturalVoice"`
@@ -49,6 +48,13 @@ type (
 	Podcast struct {
 		Link, Title, Description string
 		Episodes                 []Episode
+	}
+)
+
+type (
+	PodcastFeed struct {
+		FeedId    int64 `json:"feedId"`
+		PodcastId int64 `param:"podcastId"`
 	}
 )
 
