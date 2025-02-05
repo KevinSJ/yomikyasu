@@ -95,8 +95,17 @@ func processSpeechGeneration(wg *sync.WaitGroup, workerItems chan *WorkerRequest
 
 	for workerItem := range workerItems {
 		feedItem := workerItem.Item
-
 		log.Printf("Start procesing %v ", feedItem.Title)
+
+		exists, _ := dbService.Query().GetEpisodeExistsByUrlAndFeedId(ctx, model.GetEpisodeExistsByUrlAndFeedIdParams{
+			Url:    workerItem.Item.Link,
+			FeedID: workerItem.FeedId,
+		})
+
+		if exists != 0 {
+			log.Printf("Item exists %v", feedItem.Title)
+			return nil
+		}
 
 		speechRequests := tool.GetSynthesizeSpeechRequests(feedItem, workerItem.LanguageCode, workerItem.UseNaturalVoice, workerItem.SpeechSpeed)
 		audioContent := make([]byte, 0)
@@ -110,7 +119,7 @@ func processSpeechGeneration(wg *sync.WaitGroup, workerItems chan *WorkerRequest
 					time.Sleep(time.Second)
 				}
 
-				resp, err = (ttsClient).SynthesizeSpeech(ctx, ssr)
+				resp, err = ttsClient.SynthesizeSpeech(ctx, ssr)
 				if err != nil {
 					log.Printf("Error Encountered, Response: %v\n", err.Error())
 					continue
@@ -125,10 +134,15 @@ func processSpeechGeneration(wg *sync.WaitGroup, workerItems chan *WorkerRequest
 				return err
 			}
 
-			uuid, _ := uuid.NewV7()
+			guid := feedItem.GUID
+
+			if len(guid) == 0 {
+				uuid, _ := uuid.NewV7()
+				guid = uuid.String()
+			}
 
 			dbService.Query().CreateEpisode(context.Background(), model.CreateEpisodeParams{
-				Uuid:  uuid.String(),
+				Uuid:  guid,
 				Url:   feedItem.Link,
 				Title: feedItem.Title,
 				Description: sql.NullString{
@@ -176,7 +190,6 @@ func (r *runner) Run(ctx context.Context) {
 }
 
 func (r *runner) RunOnce(ctx context.Context) {
-	//feeds, _ := model.GetFeeds(r.db)
 	feeds, _ := (*r.db).Query().ListFeeds(context.Background())
 	g := new(errgroup.Group)
 
