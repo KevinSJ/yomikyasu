@@ -1,6 +1,9 @@
 -- name: ListEpisodes :many
 SELECT * FROM episodes;
 
+-- name: GetEpisodeExistsByUrlAndFeedId :one
+SELECT EXISTS (SELECT 1 FROM episodes WHERE url = ? and feed_id = ? LIMIT 1);
+
 -- name: CreateEpisode :one
 INSERT INTO episodes (
     uuid,
