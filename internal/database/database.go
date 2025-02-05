@@ -70,7 +70,7 @@ func (s *service) Config() {
 	log.Printf("Enable foreign key support in SQLite")
 	_, err := s.db.ExecContext(ctx, "PRAGMA foreign_keys = ON;")
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to enable foreign key: ", err)) // Log the error and terminate the program
+		log.Fatalf(fmt.Sprintf("Failed to enable foreign key: %s", err)) // Log the error and terminate the program
 	}
 }
 
