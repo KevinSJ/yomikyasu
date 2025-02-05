@@ -18,6 +18,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
     s.RegisterConfigRoutes(e)
     s.RegisterFeedRoutes(e)
+    s.RegisterPodcastRoutes(e)
 
 	return e
 }
