@@ -9,12 +9,12 @@ import (
 
 var VOICE_NAME_MAP_WAVENET = map[string]string{
 	"cmn-CN": "cmn-CN-Wavenet-A",
-	"en-US": "en-US-Neural2-C",
+	"en-US":  "en-US-Neural2-C",
 }
 
 var VOICE_NAME_MAP_STANDARD = map[string]string{
 	"cmn-CN": "cmn-CN-Standard-D",
-	"en-US": "en-US-Standard-C",
+	"en-US":  "en-US-Standard-C",
 }
 
 func getSanitizedContentChunks(item *gofeed.Item) (textchunks []string) {
@@ -38,14 +38,14 @@ func GetSynthesizeSpeechRequests(item *gofeed.Item, lang string, useNaturalVoice
 
 	lang = GetSanitizedLanguageCode(lang)
 
-    log.Printf("lang: %v\n", lang)
+	log.Printf("lang: %v\n", lang)
 
 	languageName := VOICE_NAME_MAP_STANDARD[lang]
 	if useNaturalVoice {
 		languageName = VOICE_NAME_MAP_WAVENET[lang]
 	}
 
-    log.Printf("using voice %v for language code %v", languageName, lang)
+	log.Printf("using voice %v for language code %v", languageName, lang)
 
 	synthesizeRequest := make([]*texttospeechpb.SynthesizeSpeechRequest, 0)
 

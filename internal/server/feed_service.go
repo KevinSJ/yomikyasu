@@ -28,15 +28,15 @@ func createFeed(db database.Service) echo.HandlerFunc {
 			IsFullText: feed.IsFullText,
 			ItemSince: sql.NullFloat64{
 				Float64: feed.ItemSince,
-                Valid: true,
+				Valid:   true,
 			},
 			MaxItems: sql.NullInt64{
 				Int64: feed.MaxItems,
-                Valid: true,
+				Valid: true,
 			},
 			Language: sql.NullString{
 				String: feed.Language,
-                Valid: true,
+				Valid:  true,
 			},
 		})
 

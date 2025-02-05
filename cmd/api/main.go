@@ -10,7 +10,7 @@ func main() {
 
 	server := server.NewServer()
 
-    log.Printf("Server will listen on %v ", server.Addr)
+	log.Printf("Server will listen on %v ", server.Addr)
 	err := server.ListenAndServe()
 
 	if err != nil {

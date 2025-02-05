@@ -16,10 +16,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	e.GET("/health", s.healthHandler)
 
-    s.RegisterConfigRoutes(e)
-    s.RegisterFeedRoutes(e)
-    s.RegisterPodcastRoutes(e)
-    s.RegisterEpisodeRoutes(e)
+	s.RegisterConfigRoutes(e)
+	s.RegisterFeedRoutes(e)
+	s.RegisterPodcastRoutes(e)
+	s.RegisterEpisodeRoutes(e)
 
 	return e
 }
