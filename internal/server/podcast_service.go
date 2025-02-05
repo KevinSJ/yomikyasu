@@ -8,6 +8,7 @@ import (
 	"yomikyasu/internal/database"
 	"yomikyasu/internal/dto"
 	"yomikyasu/internal/model"
+	"yomikyasu/internal/tool"
 
 	"github.com/labstack/echo/v4"
 )
@@ -22,11 +23,21 @@ func (s *Server) RegisterPodcastRoutes(e *echo.Echo) {
 func getGeneratedPodcastFeed(db database.Service) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		podcastId := c.Param("podcastId")
+		format := c.QueryParam("format")
 		podcastIdInt, _ := strconv.ParseInt(podcastId, 10, 64)
 		result, err := db.Query().GetPodcastEpisodesByPodcastId(context.Background(), podcastIdInt)
 
 		if err != nil {
 			return err
+		}
+
+		if format != "" {
+			xmlString, err := tool.GeneratePodcastsXmlFeed(&result)
+			if err != nil {
+				return err
+			}
+
+			return c.XMLBlob(http.StatusOK, (*xmlString).Bytes())
 		}
 
 		return c.JSON(http.StatusCreated, result)
